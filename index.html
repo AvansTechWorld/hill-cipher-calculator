@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#12213A" />
+<title>Hill Cipher Calculator</title>
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icons/icon-192.png" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<meta name="description" content="Encrypt and decrypt text with the Hill cipher. Every matrix step shown." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,650&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink: #12213A;
+    --ink-deep: #0C1830;
+    --paper: #EDE6D6;
+    --paper-dim: #E1D8C3;
+    --brass: #B8863B;
+    --brass-bright: #D3A257;
+    --teal: #3E7C7C;
+    --rust: #A63D40;
+    --line: rgba(237,230,214,0.14);
+    --line-strong: rgba(237,230,214,0.28);
+    --text-on-ink: #EDE6D6;
+    --text-on-ink-dim: rgba(237,230,214,0.62);
+    --text-on-paper: #1B1F2A;
+    --text-on-paper-dim: rgba(27,31,42,0.62);
+    --radius: 10px;
+    --mono: 'IBM Plex Mono', ui-monospace, monospace;
+    --display: 'Fraunces', Georgia, serif;
+    --sans: 'Public Sans', -apple-system, sans-serif;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:
+      linear-gradient(180deg, var(--ink) 0%, var(--ink-deep) 100%);
+    background-attachment: fixed;
+    color: var(--text-on-ink);
+    font-family: var(--sans);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  body::before{
+    content:"";
+    position: fixed; inset:0;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 34px 34px;
+    opacity: 0.35;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .wrap{ position: relative; z-index:1; max-width: 880px; margin: 0 auto; padding: 28px 18px 80px; }
+
+  header.hero{ padding: 18px 4px 30px; border-bottom: 1px solid var(--line-strong); margin-bottom: 28px; }
+  .eyebrow{
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--brass-bright); display:flex; align-items:center; gap:10px; margin-bottom: 14px;
+  }
+  .eyebrow .dot{ width:6px; height:6px; border-radius:50%; background: var(--brass-bright); }
+  h1{
+    font-family: var(--display); font-optical-sizing: auto; font-weight: 650;
+    font-size: clamp(34px, 6vw, 54px); line-height: 1.02; margin: 0 0 12px; letter-spacing: -0.01em;
+  }
+  h1 em{ font-style: italic; color: var(--brass-bright); }
+  .sub{ font-size: 15.5px; color: var(--text-on-ink-dim); max-width: 58ch; line-height: 1.55; margin: 0; }
+
+  .panel{
+    background: var(--paper); color: var(--text-on-paper);
+    border-radius: var(--radius); padding: 22px; margin-bottom: 20px;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.2), 0 12px 30px -14px rgba(0,0,0,0.5);
+  }
+  .panel-head{ display:flex; align-items:baseline; justify-content:space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+  .panel-title{ font-family: var(--display); font-weight: 650; font-size: 20px; margin:0; }
+  .panel-num{ font-family: var(--mono); font-size: 12px; color: var(--text-on-paper-dim); letter-spacing: 0.08em; }
+
+  label{ font-family: var(--sans); font-weight: 600; font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-on-paper-dim); display:block; margin-bottom:8px; }
+
+  .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+
+  /* size selector */
+  .seg{ display:inline-flex; border:1.5px solid var(--ink); border-radius: 8px; overflow:hidden; }
+  .seg button{
+    font-family: var(--mono); font-size: 13px; font-weight:600; padding: 8px 16px; border:none; background: transparent;
+    color: var(--ink); cursor:pointer; border-right: 1.5px solid var(--ink);
+  }
+  .seg button:last-child{ border-right:none; }
+  .seg button.active{ background: var(--ink); color: var(--paper); }
+  .seg button:hover:not(.active){ background: rgba(18,33,58,0.08); }
+
+  /* matrix grid */
+  .matrix-block{ display:flex; align-items:center; gap: 14px; flex-wrap: wrap; }
+  .bracket{ font-family: var(--display); font-size: 64px; color: var(--ink); font-weight: 300; line-height: 1; user-select:none; }
+  .matrix-grid{ display:grid; gap: 8px; }
+  .matrix-grid input{
+    width: 56px; height: 48px; text-align:center; font-family: var(--mono); font-size: 17px; font-weight:600;
+    border: 1.5px solid var(--ink); border-radius: 6px; background: #fff; color: var(--ink);
+  }
+  .matrix-grid input:focus{ outline:2px solid var(--brass); outline-offset:1px; }
+  .matrix-grid input.dup-warn{ border-color: var(--rust); }
+
+  .btn{
+    font-family: var(--sans); font-weight: 700; font-size: 13.5px; letter-spacing:0.01em;
+    padding: 11px 18px; border-radius: 7px; border: 1.5px solid var(--ink); background: var(--ink); color: var(--paper);
+    cursor:pointer; transition: transform 0.08s ease, background 0.15s ease;
+  }
+  .btn:hover{ background:#000; }
+  .btn:active{ transform: translateY(1px); }
+  .btn.ghost{ background: transparent; color: var(--ink); }
+  .btn.ghost:hover{ background: rgba(18,33,58,0.08); }
+  .btn.brass{ background: var(--brass); border-color: var(--brass); color: #1B1F2A; }
+  .btn.brass:hover{ background: var(--brass-bright); }
+  .btn:disabled{ opacity:0.45; cursor:not-allowed; }
+  .btn:focus-visible, input:focus-visible, textarea:focus-visible, .seg button:focus-visible{
+    outline: 3px solid var(--brass); outline-offset: 2px;
+  }
+
+  .status{
+    font-family: var(--mono); font-size: 13px; padding: 10px 14px; border-radius: 7px; margin-top:14px;
+    display:flex; align-items:center; gap:10px; flex-wrap: wrap;
+  }
+  .status.ok{ background: rgba(62,124,124,0.14); color: #24504f; border:1px solid rgba(62,124,124,0.4); }
+  .status.bad{ background: rgba(166,61,64,0.12); color: #7c2c2e; border:1px solid rgba(166,61,64,0.4); }
+  .status b{ font-weight:700; }
+
+  textarea, .textfield{
+    width:100%; font-family: var(--mono); font-size: 15px; padding: 12px 14px; border-radius: 7px;
+    border: 1.5px solid var(--ink); background:#fff; color: var(--ink); resize: vertical; min-height: 84px;
+  }
+  .textfield{ min-height: unset; }
+  textarea:focus, .textfield:focus{ outline:2px solid var(--brass); outline-offset:1px; }
+
+  .tabs{ display:flex; gap:6px; margin-bottom:18px; }
+  .tab{
+    font-family: var(--sans); font-weight:700; font-size: 13.5px; padding: 10px 16px; border-radius: 8px 8px 0 0;
+    background: transparent; border:1.5px solid transparent; border-bottom:none; color: var(--text-on-ink-dim); cursor:pointer;
+  }
+  .tab.active{ background: var(--paper); color: var(--text-on-paper); border-color: var(--paper); }
+
+  .field{ margin-bottom: 16px; }
+  .hint{ font-family: var(--sans); font-size: 12.5px; color: var(--text-on-paper-dim); margin-top: 6px; line-height:1.5; }
+
+  .output-card{
+    background: var(--ink-deep); border: 1.5px dashed var(--line-strong); border-radius: 8px; padding: 16px;
+    font-family: var(--mono); font-size: 22px; letter-spacing: 0.06em; word-break: break-all; color: var(--brass-bright);
+    min-height: 30px;
+  }
+  .copy-row{ display:flex; justify-content: flex-end; margin-top:10px; }
+  .copy-row .btn{ padding: 7px 14px; font-size:12px; }
+
+  details.steps{ margin-top:18px; border-top: 1px solid rgba(18,33,58,0.14); padding-top:16px; }
+  details.steps > summary{
+    cursor:pointer; font-family: var(--sans); font-weight:700; font-size: 13.5px; color: var(--ink);
+    list-style: none; display:flex; align-items:center; gap:8px;
+  }
+  details.steps > summary::-webkit-details-marker{ display:none; }
+  details.steps > summary::before{ content:"▸"; font-size:11px; transition: transform 0.15s ease; }
+  details.steps[open] > summary::before{ transform: rotate(90deg); }
+
+  .ledger{ margin-top:14px; display:flex; flex-direction:column; gap:14px; }
+  .ledger-block{
+    background: #fff; border: 1px solid rgba(18,33,58,0.16); border-radius: 8px; padding: 14px 16px;
+    font-family: var(--mono); font-size: 13px; line-height: 1.7; color: var(--ink);
+  }
+  .ledger-block .lbl{ font-weight:700; color: var(--brass); margin-right: 6px; }
+  .ledger-block .eq{ display:block; overflow-x:auto; white-space: pre; padding: 2px 0; }
+  .ledger-block .letters{ color: var(--teal); font-weight:700; }
+
+  .key-facts{ display:grid; grid-template-columns: repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin-top:14px; }
+  .fact{ background:#fff; border:1px solid rgba(18,33,58,0.14); border-radius:7px; padding:10px 12px; }
+  .fact .k{ font-family: var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:0.08em; color: var(--text-on-paper-dim); }
+  .fact .v{ font-family: var(--mono); font-size:16px; font-weight:700; margin-top:2px; }
+
+  .example-strip{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  .chip{
+    font-family: var(--mono); font-size:12px; padding:6px 11px; border-radius: 999px; border:1.5px solid var(--ink);
+    background:transparent; color: var(--ink); cursor:pointer;
+  }
+  .chip:hover{ background: rgba(18,33,58,0.08); }
+
+  footer{ text-align:center; padding: 34px 10px 10px; color: var(--text-on-ink-dim); font-size:12.5px; font-family: var(--sans); line-height:1.7; }
+  footer a{ color: var(--brass-bright); }
+
+  .install-banner{
+    display:none; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    background: var(--brass); color:#1B1F2A; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px;
+    font-family: var(--sans); font-size: 13.5px; font-weight:600;
+  }
+  .install-banner.show{ display:flex; }
+  .install-banner .btn{ padding: 8px 14px; font-size:12.5px; }
+
+  @media (prefers-reduced-motion: reduce){ *{ transition:none !important; } }
+
+  @media (max-width:560px){
+    .matrix-grid input{ width:44px; height:42px; font-size:15px; }
+    .bracket{ font-size:44px; }
+    .output-card{ font-size:18px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="eyebrow"><span class="dot"></span>N×N MATRIX CIPHER · MOD 26</div>
+    <h1>Hill Cipher <em>Calculator</em></h1>
+    <p class="sub">Encrypt and decrypt text with a Lester Hill–style linear cipher. Set a key matrix, check it's invertible mod 26, then watch every block's arithmetic laid out step by step.</p>
+  </header>
+
+  <div class="install-banner" id="installBanner">
+    <span>Install this as an app for offline use.</span>
+    <button class="btn" id="installBtn">Install</button>
+  </div>
+
+  <!-- KEY PANEL -->
+  <section class="panel">
+    <div class="panel-head">
+      <h2 class="panel-title">1 · Key matrix</h2>
+      <span class="panel-num">n × n, entries 0–25</span>
+    </div>
+
+    <label for="sizeSeg">Matrix size</label>
+    <div class="seg" id="sizeSeg" role="group" aria-label="Matrix size">
+      <button data-size="2" class="active">2 × 2</button>
+      <button data-size="3">3 × 3</button>
+      <button data-size="4">4 × 4</button>
+    </div>
+
+    <div style="height:18px"></div>
+
+    <div class="matrix-block">
+      <span class="bracket">[</span>
+      <div class="matrix-grid" id="keyGrid"></div>
+      <span class="bracket">]</span>
+      <div style="display:flex; flex-direction:column; gap:8px; margin-left:8px;">
+        <button class="btn brass" id="randomizeBtn" type="button">Random valid key</button>
+        <button class="btn ghost" id="clearKeyBtn" type="button">Clear</button>
+      </div>
+    </div>
+
+    <div class="example-strip" aria-label="Load an example key">
+      <button class="chip" data-example="2">Load classic 2×2 example</button>
+      <button class="chip" data-example="3">Load classic 3×3 example (GYBNQKURP)</button>
+    </div>
+
+    <div id="keyStatus"></div>
+
+    <div class="key-facts" id="keyFacts" style="display:none;"></div>
+
+    <details class="steps" id="keyStepsWrap" style="display:none;">
+      <summary>Show determinant &amp; inverse-key working</summary>
+      <div class="ledger" id="keySteps"></div>
+    </details>
+  </section>
+
+  <!-- ENCRYPT / DECRYPT PANEL -->
+  <section class="panel">
+    <div class="panel-head">
+      <h2 class="panel-title">2 · Encrypt or decrypt</h2>
+      <span class="panel-num">A=0 … Z=25</span>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-mode="encrypt" role="tab" aria-selected="true">Encrypt</button>
+      <button class="tab" data-mode="decrypt" role="tab" aria-selected="false">Decrypt</button>
+    </div>
+
+    <div class="field">
+      <label for="inputText" id="inputLabel">Plaintext</label>
+      <textarea id="inputText" placeholder="Type a message… letters only are used, everything else is ignored." aria-describedby="inputHint"></textarea>
+      <div class="hint" id="inputHint">Non-letters are stripped and the text is uppercased. If the letter count isn't a multiple of the matrix size, it's padded with the filler letter below.</div>
+    </div>
+
+    <div class="row" style="margin-bottom:16px;">
+      <div>
+        <label for="padChar">Padding letter</label>
+        <input class="textfield" id="padChar" maxlength="1" value="X" style="width:60px; text-align:center; text-transform:uppercase;">
+      </div>
+      <div style="flex:1"></div>
+      <button class="btn brass" id="runBtn" type="button">Encrypt →</button>
+    </div>
+
+    <div id="runStatus"></div>
+
+    <div style="margin-top:16px;">
+      <label id="outputLabel">Ciphertext</label>
+      <div class="output-card" id="outputCard">—</div>
+      <div class="copy-row">
+        <button class="btn ghost" id="copyBtn" type="button">Copy result</button>
+      </div>
+    </div>
+
+    <details class="steps" id="workingWrap" style="display:none;">
+      <summary>Show block-by-block working</summary>
+      <div class="ledger" id="workingSteps"></div>
+    </details>
+  </section>
+
+  <footer>
+    Hill cipher, published by <strong>Lester S. Hill</strong> in 1929, encrypts blocks of n letters at once by treating them as a vector and multiplying by an n×n key matrix mod 26. It's the first practical polygraphic substitution cipher — and, like all classical ciphers, offers no security against modern cryptanalysis. Educational use only.<br>
+    Works offline once installed · all calculation happens on this device.
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- Modular arithmetic ----------
+  const M = 26;
+  const mod = (n, m = M) => ((n % m) + m) % m;
+
+  function gcd(a, b){ a = Math.abs(a); b = Math.abs(b); while(b){ [a,b] = [b, a % b]; } return a; }
+
+  // Extended Euclidean algorithm: returns [g, x, y] such that a*x + b*y = g
+  function egcd(a, b){
+    if (b === 0) return [a, 1, 0];
+    const [g, x1, y1] = egcd(b, a % b);
+    return [g, y1, x1 - Math.floor(a / b) * y1];
+  }
+
+  function modInverse(a, m = M){
+    a = mod(a, m);
+    const [g, x] = egcd(a, m);
+    if (g !== 1) return null;
+    return mod(x, m);
+  }
+
+  // ---------- Matrix helpers (generic n x n) ----------
+  function minor(mat, row, col){
+    return mat.filter((_, r) => r !== row).map(r => r.filter((_, c) => c !== col));
+  }
+
+  function determinant(mat){
+    const n = mat.length;
+    if (n === 1) return mat[0][0];
+    if (n === 2) return mat[0][0]*mat[1][1] - mat[0][1]*mat[1][0];
+    let det = 0;
+    for (let col = 0; col < n; col++){
+      const sign = (col % 2 === 0) ? 1 : -1;
+      det += sign * mat[0][col] * determinant(minor(mat, 0, col));
+    }
+    return det;
+  }
+
+  function cofactorMatrix(mat){
+    const n = mat.length;
+    const C = [];
+    for (let i = 0; i < n; i++){
+      const row = [];
+      for (let j = 0; j < n; j++){
+        const sign = ((i + j) % 2 === 0) ? 1 : -1;
+        row.push(sign * determinant(minor(mat, i, j)));
+      }
+      C.push(row);
+    }
+    return C;
+  }
+
+  function transpose(mat){
+    return mat[0].map((_, c) => mat.map(r => r[c]));
+  }
+
+  function adjugate(mat){ return transpose(cofactorMatrix(mat)); }
+
+  // Full mod-26 inverse of a key matrix. Returns null if not invertible mod 26.
+  function inverseKeyMod26(mat){
+    const detRaw = determinant(mat);
+    const det = mod(detRaw, M);
+    const detInv = modInverse(det, M);
+    if (detInv === null) return { ok:false, detRaw, det, detInv:null, inverse:null };
+    const adj = adjugate(mat);
+    const inverse = adj.map(row => row.map(v => mod(v * detInv, M)));
+    return { ok:true, detRaw, det, detInv, adj, inverse };
+  }
+
+  function multiplyMatVec(mat, vec){
+    return mat.map(row => mod(row.reduce((sum, v, i) => sum + v * vec[i], 0)));
+  }
+
+  // ---------- Letters <-> numbers ----------
+  const A = "A".charCodeAt(0);
+  const letterToNum = ch => ch.toUpperCase().charCodeAt(0) - A;
+  const numToLetter = n => String.fromCharCode(mod(n) + A);
+  const cleanText = t => (t || "").toUpperCase().replace(/[^A-Z]/g, "");
+
+  // ---------- State ----------
+  let size = 2;
+  let mode = "encrypt";
+
+  const EXAMPLES = {
+    2: [[3,3],[2,5]],
+    3: [[6,24,1],[13,16,10],[20,17,15]]
+  };
+
+  // ---------- DOM refs ----------
+  const keyGrid = document.getElementById("keyGrid");
+  const keyStatus = document.getElementById("keyStatus");
+  const keyFacts = document.getElementById("keyFacts");
+  const keyStepsWrap = document.getElementById("keyStepsWrap");
+  const keySteps = document.getElementById("keySteps");
+  const sizeSeg = document.getElementById("sizeSeg");
+  const runBtn = document.getElementById("runBtn");
+  const runStatus = document.getElementById("runStatus");
+  const outputCard = document.getElementById("outputCard");
+  const inputText = document.getElementById("inputText");
+  const inputLabel = document.getElementById("inputLabel");
+  const outputLabel = document.getElementById("outputLabel");
+  const workingWrap = document.getElementById("workingWrap");
+  const workingSteps = document.getElementById("workingSteps");
+  const padCharInput = document.getElementById("padChar");
+
+  // ---------- Key grid build ----------
+  function buildKeyGrid(n, values){
+    keyGrid.style.gridTemplateColumns = `repeat(${n}, 1fr)`;
+    keyGrid.innerHTML = "";
+    for (let r = 0; r < n; r++){
+      for (let c = 0; c < n; c++){
+        const inp = document.createElement("input");
+        inp.type = "number";
+        inp.min = "0"; inp.max = "25"; inp.step = "1";
+        inp.inputMode = "numeric";
+        inp.value = values ? values[r][c] : 0;
+        inp.dataset.r = r; inp.dataset.c = c;
+        inp.setAttribute("aria-label", `Key row ${r+1} column ${c+1}`);
+        inp.addEventListener("input", onKeyChanged);
+        keyGrid.appendChild(inp);
+      }
+    }
+  }
+
+  function readKeyMatrix(){
+    const n = size;
+    const mat = Array.from({length:n}, () => new Array(n).fill(0));
+    keyGrid.querySelectorAll("input").forEach(inp => {
+      const r = +inp.dataset.r, c = +inp.dataset.c;
+      let v = parseInt(inp.value, 10);
+      if (isNaN(v)) v = 0;
+      mat[r][c] = mod(v, 26);
+    });
+    return mat;
+  }
+
+  function randomInvertibleKey(n){
+    let mat, info, tries = 0;
+    do {
+      mat = Array.from({length:n}, () => Array.from({length:n}, () => Math.floor(Math.random()*26)));
+      info = inverseKeyMod26(mat);
+      tries++;
+    } while (!info.ok && tries < 4000);
+    return mat;
+  }
+
+  function matToString(mat){
+    return "[" + mat.map(r => "[" + r.join(", ") + "]").join(", ") + "]";
+  }
+
+  function fmtMat(mat){
+    return mat.map(row => row.map(v => String(v).padStart(2," ")).join("  ")).join("\n");
+  }
+
+  // ---------- Key validity + facts ----------
+  let currentKeyInfo = null;
+
+  function onKeyChanged(){
+    const mat = readKeyMatrix();
+    const info = inverseKeyMod26(mat);
+    currentKeyInfo = info;
+
+    const g = gcd(info.det, 26);
+    if (info.ok){
+      keyStatus.innerHTML = `<div class="status ok">✓ <b>Invertible mod 26</b> — this key can encrypt and decrypt.</div>`;
+    } else {
+      keyStatus.innerHTML = `<div class="status bad">✕ <b>Not invertible mod 26</b> — determinant mod 26 is ${info.det}, which shares factor ${g} with 26. Choose different entries (determinant mod 26 must be one of 1,3,5,7,9,11,15,17,19,21,23,25 — odd and not a multiple of 13).</div>`;
+    }
+
+    keyFacts.style.display = "grid";
+    keyFacts.innerHTML = `
+      <div class="fact"><div class="k">Determinant</div><div class="v">${info.detRaw}</div></div>
+      <div class="fact"><div class="k">det mod 26</div><div class="v">${info.det}</div></div>
+      <div class="fact"><div class="k">gcd(det, 26)</div><div class="v">${g}</div></div>
+      <div class="fact"><div class="k">Inverse of det mod 26</div><div class="v">${info.detInv === null ? "none" : info.detInv}</div></div>
+    `;
+
+    keyStepsWrap.style.display = "block";
+    if (info.ok){
+      keySteps.innerHTML = `
+        <div class="ledger-block">
+<span class="lbl">Key matrix K</span>
+<span class="eq">${fmtMat(mat)}</span>
+        </div>
+        <div class="ledger-block">
+<span class="lbl">det(K)</span> = ${info.detRaw}  →  mod 26 = <b>${info.det}</b>
+<span class="eq">gcd(${info.det}, 26) = ${g}  →  invertible ✓</span>
+<span class="eq">${info.det} × ${info.detInv} ≡ 1 (mod 26)   [modular inverse of the determinant]</span>
+        </div>
+        <div class="ledger-block">
+<span class="lbl">Adjugate (transposed cofactor matrix)</span>
+<span class="eq">${fmtMat(info.adj.map(row=>row.map(v=>mod(v))))}</span>
+        </div>
+        <div class="ledger-block">
+<span class="lbl">K⁻¹ mod 26</span>  =  det⁻¹ × adjugate, each entry reduced mod 26
+<span class="eq">${fmtMat(info.inverse)}</span>
+        </div>
+      `;
+    } else {
+      keySteps.innerHTML = `<div class="ledger-block">Determinant mod 26 is <b>${info.det}</b>, and gcd(${info.det}, 26) = ${g} ≠ 1, so K has no inverse mod 26. Decryption is impossible with this key until it's changed.</div>`;
+    }
+
+    updateRunAvailability();
+  }
+
+  // ---------- Size / tabs / example buttons ----------
+  sizeSeg.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-size]");
+    if (!btn) return;
+    sizeSeg.querySelectorAll("button").forEach(b => b.classList.toggle("active", b === btn));
+    size = +btn.dataset.size;
+    buildKeyGrid(size);
+    onKeyChanged();
+    outputCard.textContent = "—";
+    workingWrap.style.display = "none";
+  });
+
+  document.querySelectorAll(".example-strip .chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      const n = +chip.dataset.example;
+      sizeSeg.querySelectorAll("button").forEach(b => b.classList.toggle("active", +b.dataset.size === n));
+      size = n;
+      buildKeyGrid(n, EXAMPLES[n]);
+      onKeyChanged();
+      if (n === 3){ inputText.value = "ACT"; }
+      if (n === 2){ inputText.value = "HI"; }
+      outputCard.textContent = "—";
+      workingWrap.style.display = "none";
+    });
+  });
+
+  document.getElementById("randomizeBtn").addEventListener("click", () => {
+    const mat = randomInvertibleKey(size);
+    buildKeyGrid(size, mat);
+    onKeyChanged();
+  });
+
+  document.getElementById("clearKeyBtn").addEventListener("click", () => {
+    buildKeyGrid(size);
+    onKeyChanged();
+  });
+
+  document.querySelectorAll(".tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll(".tab").forEach(t => { t.classList.remove("active"); t.setAttribute("aria-selected","false"); });
+      tab.classList.add("active"); tab.setAttribute("aria-selected","true");
+      mode = tab.dataset.mode;
+      inputLabel.textContent = mode === "encrypt" ? "Plaintext" : "Ciphertext";
+      outputLabel.textContent = mode === "encrypt" ? "Ciphertext" : "Plaintext";
+      runBtn.textContent = mode === "encrypt" ? "Encrypt →" : "Decrypt →";
+      outputCard.textContent = "—";
+      runStatus.innerHTML = "";
+      workingWrap.style.display = "none";
+    });
+  });
+
+  function updateRunAvailability(){
+    runBtn.disabled = !(currentKeyInfo && currentKeyInfo.ok);
+  }
+
+  // ---------- Encrypt / decrypt ----------
+  function process(){
+    if (!currentKeyInfo || !currentKeyInfo.ok){
+      runStatus.innerHTML = `<div class="status bad">Fix the key matrix first — it must be invertible mod 26.</div>`;
+      return;
+    }
+    const n = size;
+    const mat = readKeyMatrix();
+    const useMat = mode === "encrypt" ? mat : currentKeyInfo.inverse;
+
+    let pad = (padCharInput.value || "X").toUpperCase().replace(/[^A-Z]/g,"");
+    if (!pad) pad = "X";
+    padCharInput.value = pad;
+
+    const raw = inputText.value || "";
+    let letters = cleanText(raw);
+
+    if (letters.length === 0){
+      runStatus.innerHTML = `<div class="status bad">Enter some text with at least one letter (A–Z).</div>`;
+      outputCard.textContent = "—";
+      workingWrap.style.display = "none";
+      return;
+    }
+
+    const originalLen = letters.length;
+    const remainder = letters.length % n;
+    let padded = letters;
+    if (remainder !== 0){
+      padded = letters + pad.repeat(n - remainder);
+    }
+
+    const blocks = [];
+    for (let i = 0; i < padded.length; i += n){
+      blocks.push(padded.slice(i, i+n));
+    }
+
+    let result = "";
+    const stepEntries = [];
+
+    blocks.forEach((block, bi) => {
+      const vec = block.split("").map(letterToNum);
+      const outVec = multiplyMatVec(useMat, vec);
+      const outLetters = outVec.map(numToLetter).join("");
+      result += outLetters;
+
+      const rowLines = useMat.map((row, ri) => {
+        const terms = row.map((v,i) => `${v}×${vec[i]}`).join(" + ");
+        const sum = row.reduce((s,v,i) => s + v*vec[i], 0);
+        return `  row ${ri+1}: ${terms} = ${sum}  →  mod 26 = ${mod(sum)}  →  '${numToLetter(mod(sum))}'`;
+      }).join("\n");
+
+      stepEntries.push(
+`<div class="ledger-block">
+<span class="lbl">Block ${bi+1}</span> "${block}"  →  vector [${vec.join(", ")}]
+<span class="eq">${rowLines}</span>
+<span class="eq">result: <span class="letters">${outLetters}</span></span>
+</div>`);
+    });
+
+    outputCard.textContent = result;
+
+    let msg = "";
+    if (mode === "encrypt"){
+      msg = `<div class="status ok">✓ Encrypted ${blocks.length} block${blocks.length>1?"s":""} of ${n} letters.`
+        + (remainder !== 0 ? ` Cleaned text was ${originalLen} letters, padded with '${pad}' to ${padded.length}.` : ` Cleaned text was exactly ${originalLen} letters — no padding needed.`)
+        + `</div>`;
+    } else {
+      msg = `<div class="status ok">✓ Decrypted using K⁻¹ mod 26 over ${blocks.length} block${blocks.length>1?"s":""}. If the plaintext ends in trailing '${pad}' characters, that's block padding added at encryption time — trim if expected.</div>`;
+    }
+    runStatus.innerHTML = msg;
+
+    workingWrap.style.display = "block";
+    workingSteps.innerHTML = stepEntries.join("");
+  }
+
+  runBtn.addEventListener("click", process);
+  inputText.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) process();
+  });
+
+  document.getElementById("copyBtn").addEventListener("click", async () => {
+    const txt = outputCard.textContent;
+    if (!txt || txt === "—") return;
+    try {
+      await navigator.clipboard.writeText(txt);
+      const btn = document.getElementById("copyBtn");
+      const old = btn.textContent;
+      btn.textContent = "Copied ✓";
+      setTimeout(() => btn.textContent = old, 1400);
+    } catch(e){ /* clipboard unavailable, ignore */ }
+  });
+
+  // ---------- Init ----------
+  buildKeyGrid(size, EXAMPLES[2]);
+  onKeyChanged();
+
+  // ---------- PWA install prompt ----------
+  let deferredPrompt = null;
+  const banner = document.getElementById("installBanner");
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    banner.classList.add("show");
+  });
+  document.getElementById("installBtn").addEventListener("click", async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    banner.classList.remove("show");
+  });
+  window.addEventListener("appinstalled", () => banner.classList.remove("show"));
+
+  // ---------- Service worker ----------
+  if ("serviceWorker" in navigator){
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js").catch(() => {});
+    });
+  }
+})();
+</script>
+</body>
+</html>
